@@ -55,6 +55,30 @@ streamlit run app.py
 
 ---
 
+## Methods
+
+### Anomaly calculation
+Monthly SST and Chlorophyll-a anomalies are computed per grid cell by subtracting the long-term monthly climatological mean (2018–2022 baseline) from each observation.
+
+### Marine heatwave detection
+MHW detection follows **Hobday et al. (2016)** ([doi:10.1016/j.pocean.2015.12.014](https://doi.org/10.1016/j.pocean.2015.12.014)), adapted to monthly resolution:
+
+- **Climatology baseline**: 2018–2022
+- **Threshold**: 90th percentile of SST values per (lat, lon, month) across baseline years
+- **MHW month**: any month where the spatially-averaged SST exceeds the spatially-averaged 90th-percentile threshold for that calendar month
+- Consecutive MHW months are grouped into discrete events
+
+> **Caveat — known limitation**: The Hobday et al. (2016) standard requires *daily* SST data and a minimum event duration of 5 consecutive days. This dashboard uses *monthly* reanalysis output, so the 5-day rule cannot be applied and sub-monthly heatwaves are invisible. The monthly adaptation should be treated as indicative only. For rigorous MHW detection, daily satellite SST (e.g. OSTIA or CMC 0.1°) is required.
+
+### Data sources
+
+| Variable | Copernicus Marine dataset ID |
+|---|---|
+| SST | `cmems_mod_glo_phy_my_0.083deg_P1M-m` |
+| Chlorophyll-a | `cmems_mod_glo_bgc_my_0.25deg_P1M-m` |
+
+---
+
 ## Related repos
 
 This dashboard is part of a broader computational ecology portfolio:
