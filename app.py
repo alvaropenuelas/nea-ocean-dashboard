@@ -134,7 +134,7 @@ with tab_map:
         st.warning("No data for this month/year combination.")
     else:
         anom_abs = selected["anomaly"].abs().quantile(0.98)
-        fig_map = px.scatter_mapbox(
+        fig_map = px.scatter_map(
             selected,
             lat="lat",
             lon="lon",
@@ -145,7 +145,7 @@ with tab_map:
             size_max=6,
             zoom=3.5,
             center={"lat": 52, "lon": -15},
-            mapbox_style="carto-darkmatter",
+            map_style="carto-darkmatter",
             labels={"anomaly": f"Anomaly ({meta['unit']})"},
             hover_data={"lat": ":.2f", "lon": ":.2f", "anomaly": ":.3f"},
         )
