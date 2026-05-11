@@ -12,7 +12,7 @@ An interactive Streamlit dashboard for exploring Sea Surface Temperature (SST) a
 
 ## Screenshot
 
-> *(placeholder — replace with a screenshot of the deployed app)*
+![NE Atlantic Ocean Anomaly Explorer — Heatwaves tab showing monthly MHW coverage coloured by Hobday 2018 category (I–IV), 2000–2023](screenshot.png)
 
 ---
 
