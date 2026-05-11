@@ -65,26 +65,31 @@ LAYOUT_BASE = dict(
 # ── Data loading ──────────────────────────────────────────────────────────────
 
 
-@st.cache_data(show_spinner="Loading data …")
-def load_variable(path: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
-    df = pd.read_parquet(path)
+@st.cache_resource
+def _raw(path_str: str) -> pd.DataFrame:
+    """Read parquet once; shared (no copy) across all callers via cache_resource."""
+    df = pd.read_parquet(path_str)
     df["time"] = pd.to_datetime(df["time"])
-    clim = compute_climatology(df)
-    df = compute_anomaly(df, clim)
+    return df
+
+
+@st.cache_resource(show_spinner="Loading data …")
+def load_variable(path_str: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+    raw = _raw(path_str)
+    clim = compute_climatology(raw)
+    df = compute_anomaly(raw, clim)
     df["year"] = df["time"].dt.year
+    df = df.drop(columns=["value", "clim_mean"])
     return df, clim
 
 
-@st.cache_data(show_spinner="Detecting marine heatwaves …")
-def load_mhw(
-    sst_path: Path,
-) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    df = pd.read_parquet(sst_path)
-    df["time"] = pd.to_datetime(df["time"])
-    clim_p90 = compute_climatology_percentile(df)
-    mhw_df = detect_mhw_events(df, clim_p90)       # basin-mean (secondary)
+@st.cache_resource(show_spinner="Detecting marine heatwaves …")
+def load_mhw(path_str: str) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    raw = _raw(path_str)                             # reuses cached object, no re-read
+    clim_p90 = compute_climatology_percentile(raw)
+    mhw_df = detect_mhw_events(raw, clim_p90)       # basin-mean (secondary)
     events_df = summarize_mhw_events(mhw_df)
-    pixel_df = detect_mhw_pixels(df, clim_p90)     # per-pixel (primary)
+    pixel_df = detect_mhw_pixels(raw, clim_p90)     # per-pixel (primary)
     return mhw_df, events_df, pixel_df
 
 
@@ -113,7 +118,7 @@ if not meta["file"].exists():
     )
     st.stop()
 
-df, _ = load_variable(meta["file"])
+df, _ = load_variable(str(meta["file"]))
 
 # ── Subset for selected month/year ────────────────────────────────────────────
 
@@ -232,7 +237,7 @@ with tab_mhw:
     if var_key != "SST":
         st.info("MHW analysis applies to SST only. Switch the Variable selector to SST.")
     else:
-        sst_file = VARIABLES["SST"]["file"]
+        sst_file = str(VARIABLES["SST"]["file"])
         mhw_df, events_df, pixel_df = load_mhw(sst_file)
 
         # ── Primary chart: per-pixel % MHW + domain-mean overlay ──────────
@@ -367,8 +372,8 @@ with tab_coupling:
             "Run `python data_fetch.py` to generate them."
         )
     else:
-        sst_full, _ = load_variable(sst_file)
-        chl_full, _ = load_variable(chl_file)
+        sst_full, _ = load_variable(str(sst_file))
+        chl_full, _ = load_variable(str(chl_file))
 
         sst_ts = (
             sst_full.groupby("time", as_index=False)["anomaly"]
@@ -504,7 +509,7 @@ with tab_coupling:
         # ── MHW months chlorophyll analysis ───────────────────────────────
         st.markdown("#### Chlorophyll-a Response During MHW Months")
 
-        mhw_df_loaded, _, _ = load_mhw(sst_file)
+        mhw_df_loaded, _, _ = load_mhw(str(sst_file))
         mhw_times = set(mhw_df_loaded[mhw_df_loaded["is_mhw"]]["time"])
         merged = merged.copy()
         merged["is_mhw"] = merged["time"].isin(mhw_times)
