@@ -1,0 +1,7 @@
+streamlit
+copernicusmarine
+xarray
+pandas
+numpy
+plotly
+pyarrow
