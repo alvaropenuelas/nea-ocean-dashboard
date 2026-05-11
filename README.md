@@ -55,6 +55,14 @@ streamlit run app.py
 
 ---
 
+## Why this matters
+
+The 2023 North Atlantic marine heatwave was a 276-year return-period event (Desc et al., *Science*, 2024) that set records across the entire basin simultaneously. It contributed to Europe's hottest summer on record, drove mass coral bleaching along the Azores and Canary Islands, disrupted cold-water fisheries from Ireland to Portugal, and accelerated North Atlantic hurricane intensification. Despite its scale, most publicly available marine heatwave tools either do not include it, rely on a 1982–2011 baseline that inflates cold-year thresholds, or apply only the Hobday 2016 binary flag without the 2018 severity categorization — making it impossible to distinguish the 2023 Extreme-category event from routine warm summers.
+
+This dashboard is a methods demonstration as much as a visualisation. It implements the full Hobday 2016/2018 framework on a 2000–2020 reference baseline, applies a coherent-area filter to suppress spurious pixel-level extremes, and pairs the MHW detection with a lagged SST–chlorophyll cross-correlation that quantifies the ecological signal — the phytoplankton suppression that propagates up the food web weeks after the thermal anomaly peaks. The goal is to show that rigorous, reproducible MHW science is achievable with open reanalysis data and a few hundred lines of Python.
+
+---
+
 ## Methods
 
 ### Anomaly calculation
