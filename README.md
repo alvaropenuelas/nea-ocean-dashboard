@@ -6,7 +6,7 @@ An interactive Streamlit dashboard for exploring Sea Surface Temperature (SST) a
 
 ## Live demo
 
-> *(placeholder — add Streamlit Cloud URL here)*
+**https://nea-ocean-dashboard.streamlit.app/**
 
 ---
 
