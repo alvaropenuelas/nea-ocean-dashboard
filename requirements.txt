@@ -1,6 +1,4 @@
 streamlit
-copernicusmarine
-xarray
 pandas
 numpy
 plotly
