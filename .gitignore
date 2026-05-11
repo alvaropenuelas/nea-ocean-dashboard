@@ -1,4 +1,4 @@
-data/
+# data/  # temporarily removed to commit parquet cache for Streamlit Cloud
 __pycache__/
 *.pyc
 .env
