@@ -21,28 +21,25 @@ BBOX = dict(
     minimum_latitude=35,
     maximum_latitude=65,
 )
-TIME = dict(
-    start_datetime="2018-01-01",
-    end_datetime="2023-12-31",
-)
-
-
 def fetch_and_save(
     dataset_id: str,
     variable: str,
     out_path: Path,
     username: str,
     password: str,
+    start_datetime: str,
+    end_datetime: str,
     **extra,
 ) -> None:
-    print(f"Fetching {variable} from {dataset_id} …")
+    print(f"Fetching {variable} from {dataset_id} ({start_datetime} → {end_datetime}) …")
     ds = copernicusmarine.open_dataset(
         dataset_id=dataset_id,
         variables=[variable],
         username=username,
         password=password,
+        start_datetime=start_datetime,
+        end_datetime=end_datetime,
         **BBOX,
-        **TIME,
         **extra,
     )
     ds = ds.isel(latitude=slice(None, None, 2), longitude=slice(None, None, 2))
@@ -75,6 +72,8 @@ def main() -> None:
         out_path=DATA_DIR / "sst_monthly.parquet",
         username=username,
         password=password,
+        start_datetime="2000-01-01",
+        end_datetime="2023-12-31",
     )
     fetch_and_save(
         dataset_id="cmems_mod_glo_bgc_my_0.25deg_P1M-m",
@@ -82,6 +81,8 @@ def main() -> None:
         out_path=DATA_DIR / "chl_monthly.parquet",
         username=username,
         password=password,
+        start_datetime="2018-01-01",
+        end_datetime="2023-12-31",
     )
 
 
