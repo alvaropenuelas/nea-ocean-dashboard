@@ -80,6 +80,8 @@ Each MHW month is assigned a Hobday et al. (2018) intensity category based on a 
 | III — Severe | 3 ≤ multiple < 4 |
 | IV — Extreme | multiple ≥ 4 |
 
+**Coherent-area filter (domain-specific adaptation):** The maximum local category is only assigned to a month when ≥ 5% of the NE Atlantic domain is simultaneously in MHW state. Hobday's per-pixel categorization was designed for site-level analysis; applying the basin-maximum over ~32,000 grid cells guarantees that at least one coastal or frontal pixel exceeds the extreme threshold in virtually every month, producing a spurious IV — Extreme classification even when the basin as a whole is not in MHW state. The 5% threshold suppresses these isolated outliers while preserving all coherent basin-scale events.
+
 ### SST–Chlorophyll-a coupling
 The Coupling Analysis tab computes:
 

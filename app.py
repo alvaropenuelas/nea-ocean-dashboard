@@ -52,6 +52,7 @@ CATEGORY_COLORS_SOLID = {
     "III — Severe": "#c03200",
     "IV — Extreme": "#780000",
 }
+CATEGORY_UNCLASSIFIED_COLOR = "#3d5566"   # < 5 % coverage — not classified
 
 LAYOUT_BASE = dict(
     paper_bgcolor="#060d12",
@@ -238,13 +239,13 @@ with tab_mhw:
         fig_mhw = make_subplots(specs=[[{"secondary_y": True}]])
 
         bar_colors = [
-            CATEGORY_COLORS_SOLID.get(cat, "#1a2e40")
+            CATEGORY_COLORS_SOLID.get(cat, CATEGORY_UNCLASSIFIED_COLOR)
             for cat in pixel_df["max_category"]
         ]
         customdata = (
             pixel_df[["max_category", "max_intensity_multiple"]]
             .copy()
-            .assign(max_category=lambda d: d["max_category"].fillna("—"))
+            .assign(max_category=lambda d: d["max_category"].fillna("< 5% coverage"))
             .assign(max_intensity_multiple=lambda d: d["max_intensity_multiple"].round(2).fillna(0))
             .values
         )
@@ -255,6 +256,7 @@ with tab_mhw:
                 marker_color=bar_colors,
                 marker_line_width=0,
                 name="% pixels in MHW state",
+                showlegend=False,
                 customdata=customdata,
                 hovertemplate=(
                     "%{x|%Y-%m}<br>"
@@ -266,6 +268,22 @@ with tab_mhw:
             ),
             secondary_y=False,
         )
+
+        # Legend proxy traces (invisible markers, legend entries only)
+        _legend_items = list(CATEGORY_COLORS_SOLID.items()) + [
+            ("< 5% coverage (not classified)", CATEGORY_UNCLASSIFIED_COLOR)
+        ]
+        for _name, _color in _legend_items:
+            fig_mhw.add_trace(
+                go.Scatter(
+                    x=[None], y=[None],
+                    mode="markers",
+                    marker=dict(color=_color, size=10, symbol="square"),
+                    name=_name,
+                    showlegend=True,
+                ),
+                secondary_y=False,
+            )
         fig_mhw.add_trace(
             go.Scatter(
                 x=mhw_df["time"],
@@ -310,6 +328,10 @@ with tab_mhw:
             "(per-pixel detection — primary method). "
             "Bar colour = maximum local Hobday 2018 category reached that month "
             "(yellow I, orange II, red III, dark-red IV). "
+            "Grey bars: < 5% of the domain in MHW state — maximum local category is "
+            "not assigned because isolated anomalous pixels near coastal fronts produce "
+            "spuriously high intensity multiples when the basin as a whole is not in "
+            "MHW state. "
             "**Faint lines** (right axis): domain-averaged SST and P90 threshold "
             "— shown as secondary reference; spatial averaging suppresses hotspots "
             "and underdetects events. "

@@ -178,6 +178,13 @@ def detect_mhw_pixels(
         return _CAT_LABELS[1]
 
     monthly["max_category"] = monthly["max_intensity_multiple"].apply(_cat)
+
+    # Coherent-area filter: suppress category for months where < 5% of the
+    # basin is simultaneously in MHW state.  A single anomalously warm pixel
+    # surrounded by normal water is a statistical artefact of taking the
+    # spatial maximum over ~32,000 grid cells, not a coherent MHW event.
+    monthly.loc[monthly["pct_mhw"] < 5.0, "max_category"] = None
+
     return monthly[["time", "pct_mhw", "max_intensity_multiple", "max_category"]]
 
 
