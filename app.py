@@ -46,21 +46,46 @@ CATEGORY_COLORS_SOLID = {
 }
 CATEGORY_UNCLASSIFIED_COLOR = "#3d5566"
 
-LAYOUT_BASE = dict(
-    paper_bgcolor="#060d12",
-    plot_bgcolor="#0d1f2d",
-    font_color="#ffffff",
-    legend=dict(bgcolor="rgba(0,0,0,0)"),
-    margin=dict(t=20, b=40),
+_FONT = dict(family="Inter, sans-serif", size=12, color="#e6edf3")
+_AXIS = dict(
+    showgrid=False,
+    title_font=dict(size=11, color="#7a8a99"),
+    tickfont=dict(size=11, color="#7a8a99"),
+    linecolor="rgba(255,255,255,0.08)",
+)
+_YAXIS = dict(
+    showgrid=True,
+    gridcolor="rgba(26,46,64,0.9)",
+    title_font=dict(size=11, color="#7a8a99"),
+    tickfont=dict(size=11, color="#7a8a99"),
+    linecolor="rgba(255,255,255,0.08)",
 )
 
-# ── Data loaders (all @st.cache_data, all tiny except map slices) ─────────────
+LAYOUT_BASE = dict(
+    paper_bgcolor="rgba(0,0,0,0)",
+    plot_bgcolor="rgba(0,0,0,0)",
+    font=_FONT,
+    legend=dict(
+        bgcolor="rgba(13,31,45,0.6)",
+        bordercolor="#1D9E75",
+        borderwidth=1,
+        font=dict(size=11),
+    ),
+    margin=dict(l=40, r=20, t=40, b=40),
+)
+
+# Annotation events shown on SST time series
+_SST_EVENTS = [
+    ("2003-08-01", "2003 European heatwave"),
+    ("2018-06-01", "2018 NW European MHW"),
+    ("2023-06-01", "2023 NE Atlantic MHW\n276-yr return event"),
+]
+
+# ── Data loaders ──────────────────────────────────────────────────────────────
 
 
 @st.cache_data(show_spinner=False)
 def load_map_month(path: str, year: int, month: int) -> pd.DataFrame:
-    """Load a single month from the anomaly parquet via pyarrow row-group filter.
-    Peak memory: ~1 MB (one row group = 31 k rows), never loads the full file."""
     t = pd.Timestamp(year=year, month=month, day=1)
     df = pq.read_table(path, filters=[("time", "==", t)]).to_pandas()
     df["time"] = pd.to_datetime(df["time"])
@@ -69,7 +94,6 @@ def load_map_month(path: str, year: int, month: int) -> pd.DataFrame:
 
 @st.cache_data(show_spinner=False)
 def load_coupling_stats() -> pd.DataFrame:
-    """288-row time series: sst_anom (all), chl_anom (NaN pre-2018), is_mhw."""
     df = pd.read_parquet(DATA_DIR / "coupling_stats.parquet")
     df["time"] = pd.to_datetime(df["time"])
     df["year"] = df["time"].dt.year
@@ -92,12 +116,88 @@ def load_mhw_events() -> pd.DataFrame:
     return df
 
 
+# ── Hero ──────────────────────────────────────────────────────────────────────
+
+st.markdown(
+    """
+    <div style="padding: 2rem 0 1rem 0;">
+      <h1 style="margin:0; font-size:2rem; font-weight:700; color:#e6edf3;
+                 font-family:'Inter',sans-serif; letter-spacing:-0.02em;">
+        NE Atlantic Ocean Anomaly Explorer
+      </h1>
+      <p style="margin:0.4rem 0 0 0; font-size:0.95rem; font-weight:400;
+                color:#7a8a99; font-family:'Inter',sans-serif;">
+        Marine heatwave detection and SST–chlorophyll coupling in the
+        North-East Atlantic, 2000–2023
+      </p>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+_mhw_kpi = load_mhw_summary()
+_n_mhw_months = int((_mhw_kpi["max_category"].notna()).sum())
+
+_CARD_CSS = (
+    "background:#0d1f2d;"
+    "border:1px solid rgba(29,158,117,0.30);"
+    "border-radius:8px;"
+    "padding:16px 20px;"
+)
+_LABEL_CSS = (
+    "font-size:11px;font-weight:600;letter-spacing:0.08em;"
+    "text-transform:uppercase;color:#7a8a99;"
+    "font-family:'Inter',sans-serif;margin:0;"
+)
+_VALUE_CSS = (
+    "font-size:28px;font-weight:700;color:#e6edf3;"
+    "font-family:'Inter',sans-serif;margin:4px 0 2px 0;line-height:1.1;"
+)
+_SUB_CSS = (
+    "font-size:11px;color:#7a8a99;"
+    "font-family:'Inter',sans-serif;margin:0;"
+)
+
+kpi1, kpi2, kpi3 = st.columns(3)
+with kpi1:
+    st.markdown(
+        f"<div style='{_CARD_CSS}'>"
+        f"<p style='{_LABEL_CSS}'>Peak basin coverage</p>"
+        f"<p style='{_VALUE_CSS}'>78.5%</p>"
+        f"<p style='{_SUB_CSS}'>June 2023</p>"
+        f"</div>",
+        unsafe_allow_html=True,
+    )
+with kpi2:
+    st.markdown(
+        f"<div style='{_CARD_CSS}'>"
+        f"<p style='{_LABEL_CSS}'>Strongest category reached</p>"
+        f"<p style='{_VALUE_CSS}'>IV Extreme</p>"
+        f"<p style='{_SUB_CSS}'>Hobday et al. 2018</p>"
+        f"</div>",
+        unsafe_allow_html=True,
+    )
+with kpi3:
+    st.markdown(
+        f"<div style='{_CARD_CSS}'>"
+        f"<p style='{_LABEL_CSS}'>MHW months detected</p>"
+        f"<p style='{_VALUE_CSS}'>{_n_mhw_months}</p>"
+        f"<p style='{_SUB_CSS}'>≥ 5% domain coverage, 2000–2023</p>"
+        f"</div>",
+        unsafe_allow_html=True,
+    )
+
+st.markdown("<div style='height:1.5rem'></div>", unsafe_allow_html=True)
+
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 
 with st.sidebar:
-    st.title("🌊 NE Atlantic")
-    st.markdown("**Ocean Anomaly Explorer**")
-    st.divider()
+    st.markdown(
+        "<p style='font-size:10px;font-weight:700;letter-spacing:0.12em;"
+        "text-transform:uppercase;color:#7a8a99;margin-bottom:8px;'>"
+        "Controls</p>",
+        unsafe_allow_html=True,
+    )
 
     var_key = st.selectbox("Variable", list(VARIABLES.keys()))
     meta = VARIABLES[var_key]
@@ -109,13 +209,66 @@ with st.sidebar:
     st.divider()
     st.caption("SST: 2000–2023 | Chl-a: 2018–2023\nNE Atlantic (30°W–5°E, 35°N–65°N)")
 
+    with st.expander("Methods & References"):
+        st.markdown(
+            """
+**Anomaly calculation**
+
+Monthly anomalies per grid cell: observation minus the long-term
+monthly climatological mean.
+- SST baseline: 2000–2020
+- Chl-a baseline: 2018–2022
+
+**Marine heatwave detection**
+
+Follows Hobday et al. (2016) adapted to monthly resolution.
+Threshold: 90th percentile per (lat, lon, month) over the
+2000–2020 baseline. Consecutive months above threshold form
+a discrete event.
+
+**Categorisation (Hobday 2018)**
+
+| Category | Intensity multiple |
+|---|---|
+| I — Moderate | 1× – 2× |
+| II — Strong | 2× – 3× |
+| III — Severe | 3× – 4× |
+| IV — Extreme | ≥ 4× |
+
+**Coherent-area filter**
+
+Maximum category only assigned when ≥ 5% of the NE Atlantic
+domain is simultaneously in MHW state, suppressing isolated
+frontal-pixel extremes.
+
+**Coupling analysis**
+
+Pearson r between spatially-averaged monthly SST and
+Chl-a anomalies over the 2018–2023 overlap period, plus
+lagged cross-correlation at −3 to +3 months.
+
+---
+
+**References**
+
+Hobday et al. (2016) *Progress in Oceanography* 141, 227–238.
+
+Hobday et al. (2018) *Oceanography* 31(2), 162–173.
+
+England et al. (2025) *Nature* 642, 75–82.
+
+*Data: Copernicus Marine Service*
+            """
+        )
+
 # ── Tabs ──────────────────────────────────────────────────────────────────────
 
 tab_map, tab_ts, tab_hm, tab_mhw, tab_coupling = st.tabs(
-    ["🗺 Map", "📈 Time Series", "🟥 Heatmap", "🌡 Heatwaves", "🔗 Coupling"]
+    ["Spatial Anomaly", "Time Series", "Month × Year",
+     "Marine Heatwaves", "SST–Chlorophyll"]
 )
 
-# ── Tab 1: Map ────────────────────────────────────────────────────────────────
+# ── Tab 1: Spatial Anomaly ────────────────────────────────────────────────────
 
 with tab_map:
     st.subheader(f"{meta['label']} Anomaly — {year}-{month:02d}")
@@ -145,7 +298,8 @@ with tab_map:
             fig_map.update_layout(
                 margin={"r": 0, "t": 0, "l": 0, "b": 0},
                 coloraxis_colorbar=dict(title=meta["unit"]),
-                paper_bgcolor="#060d12",
+                paper_bgcolor="rgba(0,0,0,0)",
+                font=_FONT,
             )
             st.plotly_chart(fig_map, use_container_width=True)
 
@@ -170,9 +324,10 @@ with tab_ts:
         x=pd.concat([ts["time"], ts["time"].iloc[::-1]]),
         y=pd.concat([ts["upper"], ts["lower"].iloc[::-1]]),
         fill="toself",
-        fillcolor="rgba(29,158,117,0.15)",
+        fillcolor="rgba(29,158,117,0.12)",
         line=dict(color="rgba(255,255,255,0)"),
-        name="±1 std",
+        name="±1 std (3-month)",
+        hoverinfo="skip",
     ))
     fig_ts.add_trace(go.Scatter(
         x=ts["time"], y=ts["mean_anomaly"],
@@ -180,16 +335,34 @@ with tab_ts:
         line=dict(color="#1D9E75", width=1.8),
         name="Anomaly",
     ))
-    fig_ts.add_hline(y=0, line_color="white", line_dash="dot", line_width=1)
+    fig_ts.add_hline(y=0, line_color="rgba(255,255,255,0.25)",
+                     line_dash="dot", line_width=1)
+
+    if var_key == "SST":
+        for date_str, label in _SST_EVENTS:
+            dt = pd.Timestamp(date_str)
+            if ts["time"].min() <= dt <= ts["time"].max():
+                fig_ts.add_vline(
+                    x=dt.timestamp() * 1000,
+                    line_color="rgba(29,158,117,0.60)",
+                    line_dash="dash",
+                    line_width=1,
+                    annotation_text=label,
+                    annotation_position="top right",
+                    annotation_font=dict(size=10, color="#7a8a99"),
+                    annotation_bgcolor="rgba(13,31,45,0.75)",
+                    annotation_bordercolor="rgba(29,158,117,0.4)",
+                    annotation_borderwidth=1,
+                )
+
     fig_ts.update_layout(
         **LAYOUT_BASE,
-        xaxis=dict(showgrid=False, title=""),
-        yaxis=dict(showgrid=True, gridcolor="#1a2e40",
-                   title=f"Anomaly ({meta['unit']})"),
+        xaxis=dict(**_AXIS, title=""),
+        yaxis=dict(**_YAXIS, title=f"Anomaly ({meta['unit']})"),
     )
     st.plotly_chart(fig_ts, use_container_width=True)
 
-# ── Tab 3: Heatmap ────────────────────────────────────────────────────────────
+# ── Tab 3: Month × Year ───────────────────────────────────────────────────────
 
 with tab_hm:
     coupling_hm = load_coupling_stats()
@@ -214,6 +387,8 @@ with tab_hm:
     fig_hm.update_layout(
         **LAYOUT_BASE,
         coloraxis_colorbar=dict(title=meta["unit"]),
+        xaxis={**_AXIS, "title": "Year"},
+        yaxis={**_YAXIS, "showgrid": False, "title": ""},
     )
     st.plotly_chart(fig_hm, use_container_width=True)
 
@@ -279,16 +454,33 @@ with tab_mhw:
         fig_mhw.add_trace(
             go.Scatter(x=mhw_basin["time"], y=mhw_basin["spatial_mean_sst"],
                        mode="lines",
-                       line=dict(color="rgba(255,255,255,0.45)", width=1.5),
+                       line=dict(color="rgba(255,255,255,0.40)", width=1.5),
                        name="Domain-mean SST (less sensitive)"),
             secondary_y=True,
         )
-        fig_mhw.update_yaxes(title_text="% of NE Atlantic in MHW state",
-                              secondary_y=False, range=[0, 100],
-                              showgrid=True, gridcolor="#1a2e40")
-        fig_mhw.update_yaxes(title_text="SST (°C)", secondary_y=True, showgrid=False)
-        fig_mhw.update_layout(**LAYOUT_BASE,
-                              xaxis=dict(showgrid=False, title=""), bargap=0.08)
+        fig_mhw.update_yaxes(
+            title_text="% of NE Atlantic in MHW state",
+            secondary_y=False, range=[0, 100],
+            showgrid=True, gridcolor="rgba(26,46,64,0.9)",
+            title_font=dict(size=11, color="#7a8a99"),
+            tickfont=dict(size=11, color="#7a8a99"),
+        )
+        fig_mhw.update_yaxes(
+            title_text="SST (°C)", secondary_y=True,
+            showgrid=False,
+            title_font=dict(size=11, color="#7a8a99"),
+            tickfont=dict(size=11, color="#7a8a99"),
+        )
+        fig_mhw.update_xaxes(
+            showgrid=False,
+            title_font=dict(size=11, color="#7a8a99"),
+            tickfont=dict(size=11, color="#7a8a99"),
+        )
+        fig_mhw.update_layout(
+            **LAYOUT_BASE,
+            xaxis=dict(title=""),
+            bargap=0.08,
+        )
         st.plotly_chart(fig_mhw, use_container_width=True)
 
         st.caption(
@@ -315,7 +507,7 @@ with tab_mhw:
             disp["cumulative_intensity"] = disp["cumulative_intensity"].round(3)
             st.dataframe(disp, use_container_width=True, hide_index=True)
 
-# ── Tab 5: Coupling Analysis ──────────────────────────────────────────────────
+# ── Tab 5: SST–Chlorophyll ────────────────────────────────────────────────────
 
 with tab_coupling:
     st.subheader("SST–Chlorophyll-a Coupling Analysis")
@@ -343,13 +535,25 @@ with tab_coupling:
                        line=dict(color="#1D9E75", width=1.8)),
             secondary_y=True,
         )
-        fig_dual.add_hline(y=0, line_color="rgba(255,255,255,0.3)",
+        fig_dual.add_hline(y=0, line_color="rgba(255,255,255,0.2)",
                            line_dash="dot", line_width=1)
-        fig_dual.update_yaxes(title_text="SST anomaly (°C)", secondary_y=False,
-                              showgrid=True, gridcolor="#1a2e40", color="#e05252")
-        fig_dual.update_yaxes(title_text="Chl-a anomaly (mg m⁻³)", secondary_y=True,
-                              showgrid=False, color="#1D9E75")
-        fig_dual.update_layout(**LAYOUT_BASE, xaxis=dict(showgrid=False, title=""))
+        fig_dual.update_yaxes(
+            title_text="SST anomaly (°C)", secondary_y=False,
+            showgrid=True, gridcolor="rgba(26,46,64,0.9)",
+            title_font=dict(size=11, color="#e05252"),
+            tickfont=dict(size=11, color="#7a8a99"),
+        )
+        fig_dual.update_yaxes(
+            title_text="Chl-a anomaly (mg m⁻³)", secondary_y=True,
+            showgrid=False,
+            title_font=dict(size=11, color="#1D9E75"),
+            tickfont=dict(size=11, color="#7a8a99"),
+        )
+        fig_dual.update_xaxes(
+            showgrid=False,
+            tickfont=dict(size=11, color="#7a8a99"),
+        )
+        fig_dual.update_layout(**LAYOUT_BASE, xaxis=dict(title=""))
         st.plotly_chart(fig_dual, use_container_width=True)
 
         st.divider()
@@ -377,16 +581,18 @@ with tab_coupling:
             ))
             fig_sc.update_layout(
                 **LAYOUT_BASE,
-                xaxis=dict(showgrid=True, gridcolor="#1a2e40",
-                           title="SST anomaly (°C)"),
-                yaxis=dict(showgrid=True, gridcolor="#1a2e40",
-                           title="Chl-a anomaly (mg m⁻³)"),
+                xaxis={**_AXIS, "showgrid": True,
+                       "gridcolor": "rgba(26,46,64,0.9)",
+                       "title": "SST anomaly (°C)"},
+                yaxis={**_YAXIS, "title": "Chl-a anomaly (mg m⁻³)"},
                 annotations=[dict(
                     x=0.05, y=0.95, xref="paper", yref="paper",
                     text=f"<b>Pearson r = {r_val:.3f}</b>",
                     showarrow=False,
-                    bgcolor="rgba(6,13,18,0.8)",
-                    font=dict(color="#ffffff", size=13),
+                    bgcolor="rgba(13,31,45,0.85)",
+                    bordercolor="rgba(29,158,117,0.4)",
+                    borderwidth=1,
+                    font=dict(color="#e6edf3", size=12, family="Inter, sans-serif"),
                 )],
             )
             st.plotly_chart(fig_sc, use_container_width=True)
@@ -411,15 +617,15 @@ with tab_coupling:
                 marker_color=["#e05252" if r >= 0 else "#5281e0" for r in lag_rs],
                 text=[f"{r:.3f}" for r in lag_rs],
                 textposition="outside",
-                textfont=dict(size=11),
+                textfont=dict(size=11, color="#7a8a99"),
             ))
-            fig_lag.add_hline(y=0, line_color="white", line_width=1)
+            fig_lag.add_hline(y=0, line_color="rgba(255,255,255,0.3)", line_width=1)
             fig_lag.update_layout(
                 **LAYOUT_BASE,
-                xaxis=dict(showgrid=False,
+                xaxis=dict(**_AXIS,
                            title="Lag (months) — positive: SST leads Chl-a",
                            tickvals=lags, ticktext=[str(l) for l in lags]),
-                yaxis=dict(showgrid=True, gridcolor="#1a2e40", title="Pearson r"),
+                yaxis=dict(**_YAXIS, title="Pearson r"),
             )
             st.plotly_chart(fig_lag, use_container_width=True)
 
@@ -449,12 +655,25 @@ with tab_coupling:
 
 # ── Footer ────────────────────────────────────────────────────────────────────
 
-st.divider()
 st.markdown(
-    "<div style='text-align:center; color:#888; font-size:0.8rem;'>"
-    "Data: Copernicus Marine Service | "
-    "Álvaro Peñuelas Sánchez | "
-    "<a href='https://github.com/alvaropenuelas' style='color:#1D9E75;'>"
-    "github.com/alvaropenuelas</a></div>",
+    """
+    <div style="border-top:1px solid #1f2d3d; margin-top:2rem; padding-top:1rem;
+                display:flex; justify-content:space-between; align-items:center;
+                flex-wrap:wrap; gap:0.5rem;">
+      <span style="color:#7a8a99; font-size:11px; font-family:'Inter',sans-serif;">
+        Data: Copernicus Marine Service ·
+        <code style="font-size:10px; color:#7a8a99;">
+          cmems_mod_glo_phy_my_0.083deg_P1M-m
+        </code>
+      </span>
+      <span style="color:#7a8a99; font-size:11px; font-family:'Inter',sans-serif;">
+        Álvaro Peñuelas Sánchez ·
+        <a href="https://github.com/alvaropenuelas/nea-ocean-dashboard"
+           style="color:#1D9E75; text-decoration:none;">
+          ⌥ github.com/alvaropenuelas/nea-ocean-dashboard
+        </a>
+      </span>
+    </div>
+    """,
     unsafe_allow_html=True,
 )
