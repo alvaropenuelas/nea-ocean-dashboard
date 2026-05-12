@@ -13,6 +13,21 @@ st.set_page_config(
     layout="wide",
 )
 
+st.markdown(
+    """
+    <style>
+    [data-testid="stCaptionContainer"] p {
+        font-style: italic;
+        font-size: 12px !important;
+        color: #7a8a99 !important;
+        margin-top: 8px;
+        max-width: 100%;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 # ── Constants ─────────────────────────────────────────────────────────────────
 
 DATA_DIR = Path("data")
@@ -511,7 +526,7 @@ with tab_mhw:
 
         st.subheader("Detected MHW events (basin-mean method)")
         st.caption(
-            "Consecutive months in basin-mean MHW state, grouped as discrete events. "
+            "Consecutive months in basin-mean MHW state, grouped as events. "
             "This basin-averaged view is less sensitive than the per-pixel detection "
             "above and is shown for reference."
         )
@@ -578,7 +593,7 @@ with tab_coupling:
             "2018–2023 period. "
             "Look for inverse coupling: warm SST anomalies often correspond to "
             "chlorophyll declines, consistent with reduced nutrient mixing under "
-            "thermally stratified conditions."
+            "stratified warm conditions."
         )
 
         st.divider()
@@ -622,10 +637,10 @@ with tab_coupling:
             )
             st.plotly_chart(fig_sc, use_container_width=True)
             st.caption(
-                "Each point is one month of paired SST and Chl-a anomalies. "
-                "A negative slope means warmer-than-average months tend to have "
-                "lower chlorophyll — the Pearson r quantifies how consistent "
-                "this relationship is across the record."
+                "Each point is one month. "
+                "The fitted regression line and Pearson r quantify the basin-scale coupling. "
+                "Negative slope indicates that warmer months tend to have lower "
+                "phytoplankton biomass."
             )
 
         # ── Plot 3: lagged cross-correlation ──────────────────────────────
@@ -660,11 +675,12 @@ with tab_coupling:
             )
             st.plotly_chart(fig_lag, use_container_width=True)
             st.caption(
-                "Correlation between SST anomaly at time t and Chl-a anomaly "
-                "at t + lag months. "
-                "A negative bar at a positive lag means chlorophyll tends to drop "
-                "after an SST spike — look for whether the signal is stronger "
-                "with a 1–2 month delay than at zero lag."
+                "Correlation between SST anomaly and chlorophyll anomaly at different "
+                "time lags. "
+                "Lag 0 = same month. Negative lags = chlorophyll leads SST; "
+                "positive lags = SST leads chlorophyll. "
+                "The strongest correlation tells you which variable drives the other "
+                "and on what timescale."
             )
 
         st.divider()
@@ -680,6 +696,11 @@ with tab_coupling:
         c1.metric("Chl-a anomaly — MHW months", f"{mhw_chl:+.4f} mg m⁻³")
         c2.metric("Chl-a anomaly — non-MHW months", f"{non_mhw_chl:+.4f} mg m⁻³")
         c3.metric("MHW months (2018–2023)", n_mhw_months)
+        st.caption(
+            "Mean chlorophyll anomaly during MHW months vs non-MHW months. "
+            "A negative MHW value reproduces the Copernicus 2023 finding of 50–60% "
+            "chlorophyll decline in the eastern North Atlantic during the 2023 heatwave."
+        )
 
         mhw_2023 = coup[coup["is_mhw"] & (coup["time"].dt.year == 2023)].copy()
         if not mhw_2023.empty:
