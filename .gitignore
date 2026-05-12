@@ -1,5 +1,15 @@
-# data/  # temporarily removed to commit parquet cache for Streamlit Cloud
+# Raw data files (large, not needed by deployed app)
+data/sst_monthly.parquet
+data/chl_monthly.parquet
+
+# Legacy intermediate files no longer generated
+data/sst_timeseries.parquet
+data/chl_timeseries.parquet
+data/coupling_ts.parquet
+data/mhw_monthly.parquet
+
 __pycache__/
 *.pyc
 .env
 .DS_Store
+.claude/
