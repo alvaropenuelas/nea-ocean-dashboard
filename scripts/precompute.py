@@ -4,18 +4,21 @@ The deployed app loads only these files — the raw SST/Chl parquets are
 never touched at runtime.
 
 Usage:
-    python precompute.py
+    python scripts/precompute.py
 """
+
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import json
 import numpy as np
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
-from pathlib import Path
 
-from analysis import compute_climatology, compute_anomaly
-from mhw import (
+from src.analysis import compute_climatology, compute_anomaly
+from src.mhw import (
     compute_climatology_percentile,
     detect_mhw_events,
     detect_mhw_pixels,

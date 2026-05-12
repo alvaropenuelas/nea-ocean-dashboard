@@ -12,7 +12,7 @@ An interactive Streamlit dashboard for exploring Sea Surface Temperature (SST) a
 
 ## Screenshot
 
-![NE Atlantic Ocean Anomaly Explorer — Marine Heatwaves tab with KPI hero cards, monthly MHW basin coverage coloured by Hobday 2018 category (I–IV), 2000–2023](screenshot.png)
+![NE Atlantic Ocean Anomaly Explorer — Marine Heatwaves tab with KPI hero cards, monthly MHW basin coverage coloured by Hobday 2018 category (I–IV), 2000–2023](assets/screenshot.png)
 
 ---
 

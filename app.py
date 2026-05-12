@@ -1,11 +1,10 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import pyarrow.parquet as pq
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from pathlib import Path
+from src.data_io import DATA_DIR, load_map_month, load_coupling_stats, load_mhw_summary, load_mhw_events
 
 st.set_page_config(
     page_title="NE Atlantic Ocean Dashboard",
@@ -29,8 +28,6 @@ st.markdown(
 )
 
 # ── Constants ─────────────────────────────────────────────────────────────────
-
-DATA_DIR = Path("data")
 
 VARIABLES = {
     "SST": {
@@ -95,41 +92,6 @@ _SST_EVENTS = [
     ("2018-06-01", "2018 NW European MHW"),
     ("2023-06-01", "2023 NE Atlantic MHW\n276-yr return event"),
 ]
-
-# ── Data loaders ──────────────────────────────────────────────────────────────
-
-
-@st.cache_data(show_spinner=False)
-def load_map_month(path: str, year: int, month: int) -> pd.DataFrame:
-    t = pd.Timestamp(year=year, month=month, day=1)
-    df = pq.read_table(path, filters=[("time", "==", t)]).to_pandas()
-    df["time"] = pd.to_datetime(df["time"])
-    return df
-
-
-@st.cache_data(show_spinner=False)
-def load_coupling_stats() -> pd.DataFrame:
-    df = pd.read_parquet(DATA_DIR / "coupling_stats.parquet")
-    df["time"] = pd.to_datetime(df["time"])
-    df["year"] = df["time"].dt.year
-    df["month"] = df["time"].dt.month
-    return df
-
-
-@st.cache_data(show_spinner=False)
-def load_mhw_summary() -> pd.DataFrame:
-    df = pd.read_parquet(DATA_DIR / "mhw_monthly_summary.parquet")
-    df["time"] = pd.to_datetime(df["time"])
-    return df
-
-
-@st.cache_data(show_spinner=False)
-def load_mhw_events() -> pd.DataFrame:
-    df = pd.read_parquet(DATA_DIR / "mhw_events.parquet")
-    df["start_date"] = pd.to_datetime(df["start_date"])
-    df["end_date"] = pd.to_datetime(df["end_date"])
-    return df
-
 
 # ── Hero ──────────────────────────────────────────────────────────────────────
 
