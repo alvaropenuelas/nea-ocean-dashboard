@@ -302,6 +302,11 @@ with tab_map:
                 font=_FONT,
             )
             st.plotly_chart(fig_map, use_container_width=True)
+            st.caption(
+                "Each pixel shows how much the selected month deviates from its "
+                "2000–2020 climatological average. Red = warmer than typical, blue = cooler. "
+                "Use the year and month sliders to scan for marine heatwave events — try June 2023."
+            )
 
 # ── Tab 2: Time Series ────────────────────────────────────────────────────────
 
@@ -361,6 +366,12 @@ with tab_ts:
         yaxis=dict(**_YAXIS, title=f"Anomaly ({meta['unit']})"),
     )
     st.plotly_chart(fig_ts, use_container_width=True)
+    st.caption(
+        "Monthly spatially-averaged anomaly across the NE Atlantic. "
+        "The shaded band shows the 3-month rolling ±1 standard deviation. "
+        "Values oscillate around zero by construction; sustained excursions above "
+        "the band indicate basin-wide warming events."
+    )
 
 # ── Tab 3: Month × Year ───────────────────────────────────────────────────────
 
@@ -391,6 +402,12 @@ with tab_hm:
         yaxis={**_YAXIS, "showgrid": False, "title": ""},
     )
     st.plotly_chart(fig_hm, use_container_width=True)
+    st.caption(
+        "Each cell is the spatially-averaged anomaly for one month-year combination. "
+        "Rows are months (Jan → Dec), columns are years. "
+        "Vertical streaks of red indicate years with sustained warming; "
+        "horizontal streaks indicate seasonal biases in the anomaly signal."
+    )
 
 # ── Tab 4: Marine Heatwaves ───────────────────────────────────────────────────
 
@@ -484,19 +501,20 @@ with tab_mhw:
         st.plotly_chart(fig_mhw, use_container_width=True)
 
         st.caption(
-            "**Bars**: % of NE Atlantic grid cells exceeding their local P90 threshold "
-            "(per-pixel detection — primary method). "
-            "Bar colour = maximum local Hobday 2018 category reached that month. "
-            "Grey bars: < 5% of domain in MHW state — category not assigned "
-            "(isolated frontal pixels produce spuriously high intensity multiples). "
-            "**Faint lines** (right axis): domain-averaged SST and P90 — secondary "
-            "reference; spatial averaging underdetects events. "
-            "Baseline: 2000–2020. Method: Hobday et al. 2016/2018."
+            "Percentage of the NE Atlantic in marine heatwave state each month, "
+            "with bars colored by the maximum local Hobday 2018 category "
+            "(I Moderate → IV Extreme). "
+            "Grey bars indicate months below the 5% coherent-area threshold — "
+            "isolated hot pixels, not basin-scale events. "
+            "The June 2023 peak (78.5% coverage) dominates the 24-year record."
         )
 
         st.subheader("Detected MHW events (basin-mean method)")
-        st.caption("Events from domain-averaged detection (secondary view). "
-                   "See bar chart for the more sensitive per-pixel picture.")
+        st.caption(
+            "Consecutive months in basin-mean MHW state, grouped as discrete events. "
+            "This basin-averaged view is less sensitive than the per-pixel detection "
+            "above and is shown for reference."
+        )
         if events_df.empty:
             st.write("No MHW events detected by the basin-mean method.")
         else:
@@ -555,6 +573,13 @@ with tab_coupling:
         )
         fig_dual.update_layout(**LAYOUT_BASE, xaxis=dict(title=""))
         st.plotly_chart(fig_dual, use_container_width=True)
+        st.caption(
+            "SST anomaly (red) and chlorophyll-a anomaly (green) over the shared "
+            "2018–2023 period. "
+            "Look for inverse coupling: warm SST anomalies often correspond to "
+            "chlorophyll declines, consistent with reduced nutrient mixing under "
+            "thermally stratified conditions."
+        )
 
         st.divider()
 
@@ -596,6 +621,12 @@ with tab_coupling:
                 )],
             )
             st.plotly_chart(fig_sc, use_container_width=True)
+            st.caption(
+                "Each point is one month of paired SST and Chl-a anomalies. "
+                "A negative slope means warmer-than-average months tend to have "
+                "lower chlorophyll — the Pearson r quantifies how consistent "
+                "this relationship is across the record."
+            )
 
         # ── Plot 3: lagged cross-correlation ──────────────────────────────
         with col_r:
@@ -628,6 +659,13 @@ with tab_coupling:
                 yaxis=dict(**_YAXIS, title="Pearson r"),
             )
             st.plotly_chart(fig_lag, use_container_width=True)
+            st.caption(
+                "Correlation between SST anomaly at time t and Chl-a anomaly "
+                "at t + lag months. "
+                "A negative bar at a positive lag means chlorophyll tends to drop "
+                "after an SST spike — look for whether the signal is stronger "
+                "with a 1–2 month delay than at zero lag."
+            )
 
         st.divider()
 
